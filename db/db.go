@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +23,21 @@ type Connection struct {
 	Optime    bson.MongoTimestamp
 	NOplog    uint64
 	NDone     uint64
+}
+
+type ApplyOpsResponse struct {
+	Ok     bool   `bson:"ok"`
+	ErrMsg string `bson:"errmsg"`
+}
+
+type Oplog struct {
+	Timestamp bson.MongoTimestamp `bson:"ts"`
+	HistoryID int64               `bson:"h"`
+	Version   int                 `bson:"v"`
+	Operation string              `bson:"op"`
+	Namespace string              `bson:"ns"`
+	Object    bson.D              `bson:"o"`
+	Query     bson.D              `bson:"o2"`
 }
 
 func NewConnection(config Config) (*Connection, error) {
@@ -104,12 +118,12 @@ func (c *Connection) Push(oplog bson.M) {
 
 func (c *Connection) SyncOplog(dst *Connection) error {
 	var (
-		query  bson.M
-		result bson.M
-		iter   *mgo.Iter
-		sec    bson.MongoTimestamp
-		ord    bson.MongoTimestamp
-		err    error
+		query      bson.M
+		oplogEntry Oplog
+		iter       *mgo.Iter
+		sec        bson.MongoTimestamp
+		ord        bson.MongoTimestamp
+		err        error
 	)
 
 	oplog := c.Session.DB("local").C("oplog.rs")
@@ -131,51 +145,33 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		return fmt.Errorf("No databases found")
 	}
 
+	applyOpsResponse := ApplyOpsResponse{}
+	opCount := 0
+
+	fmt.Println("Tailin...")
 	iter = oplog.Find(query).Tail(1 * time.Second)
 	for {
-		for iter.Next(&result) {
-			ts, ok := result["ts"].(bson.MongoTimestamp)
-			if ok {
-				query["ts"] = bson.M{"$gt": ts}
-
-				op := result["op"]
-				ns := result["ns"]
-
-				switch op {
-				case "i": // insert
-					dbname := strings.Split(ns.(string), ".")[0]
-					collname := strings.Split(ns.(string), ".")[1]
-					//id := result["o"].(bson.M)["_id"]
-					//if _, err := dst.Session.DB(dbname).C(collname).UpsertId(id, result["o"]); err != nil {
-					if err := dst.Session.DB(dbname).C(collname).Insert(result["o"]); err != nil {
-						log.Println("insert", err)
-					}
-				case "u": // update
-					dbname := strings.Split(ns.(string), ".")[0]
-					collname := strings.Split(ns.(string), ".")[1]
-					if err := dst.Session.DB(dbname).C(collname).Update(result["o2"], result["o"]); err != nil {
-						log.Println("update", err)
-					}
-				case "d": // delete
-					dbname := strings.Split(ns.(string), ".")[0]
-					collname := strings.Split(ns.(string), ".")[1]
-					if err := dst.Session.DB(dbname).C(collname).Remove(result["o"]); err != nil {
-						log.Println("delete", err)
-					}
-				case "c": // command
-					//dbname := strings.Split(ns.(string), ".")[0]
-					//if err := dst.Session.DB(dbname).Run(result["o"], nil); err != nil {
-					//	log.Println("command", err)
-					//}
-				case "n": // no-op
-					// do nothing
-				default:
-				}
-
-				fmt.Printf("\rOn %d\n", ts)
-			} else {
-				panic(fmt.Sprintf("`ts` is not found in result: %v\n", result))
+		for iter.Next(&oplogEntry) {
+			// skip noops
+			if oplogEntry.Operation == "n" {
+				log.Printf("skipping no-op for namespace `%v`", oplogEntry.Namespace)
+				continue
 			}
+			opCount++
+
+			// apply the operation
+			opsToApply := []Oplog{oplogEntry}
+			err := dst.Session.Run(bson.M{"applyOps": opsToApply}, &applyOpsResponse)
+			if err != nil {
+				return fmt.Errorf("error applying ops: %v", err)
+			}
+
+			// check the server's response for an issue
+			if !applyOpsResponse.Ok {
+				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+			}
+
+			fmt.Println(opCount)
 		}
 
 		err = iter.Err()
