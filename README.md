@@ -10,7 +10,6 @@ $ go run main.go --help
 Typically this command will take the following form:
 ```
 $ go run main.go sync --src mongodb://localhost:27018 --src-username mongooplog --src-password some-password --dst mongodb://localhost:27019 --dst-username mongooplog --dst-password some-password --since 1477423299
-
 ```
 
 This command copies oplog entries from the mongod instance running on the host mongodb0.example.net and duplicates operations to the host mongodb1.example.net. If you do not need to keep the --src host running during the migration, consider using mongodump and mongorestore or another backup operation, which may be better suited to your operation.
