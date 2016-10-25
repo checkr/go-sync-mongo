@@ -16,6 +16,7 @@ var syncCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		srcConfig := db.Config{
 			URI: viper.GetString("src"),
+			SSL: viper.GetBool("src-ssl"),
 			Creds: mgo.Credential{
 				Username: viper.GetString("src-username"),
 				Password: viper.GetString("src-password"),
@@ -28,6 +29,7 @@ var syncCmd = &cobra.Command{
 
 		dstConfig := db.Config{
 			URI: viper.GetString("dst"),
+			SSL: viper.GetBool("dst-ssl"),
 			Creds: mgo.Credential{
 				Username: viper.GetString("dst-username"),
 				Password: viper.GetString("dst-password"),

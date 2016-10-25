@@ -9,7 +9,7 @@ $ go run main.go --help
 
 Typically this command will take the following form:
 ```
-$ go run main.go sync --src mongodb://localhost:27018 --src-username mongooplog --src-password some-password --dst mongodb://localhost:27019 --dst-username mongooplog --dst-password some-password --since 1477423299
+$ go run main.go sync --src "mongodb://localhost:27018" --src-username mongooplog --src-password some-password --src-ssl=false --dst "mongodb://localhost:27019" --dst-username mongooplog --dst-password some-password --dst-ssl=false
 ```
 
 This command copies oplog entries from the mongod instance running on the host mongodb0.example.net and duplicates operations to the host mongodb1.example.net. If you do not need to keep the --src host running during the migration, consider using mongodump and mongorestore or another backup operation, which may be better suited to your operation.
@@ -56,7 +56,16 @@ $ docker exec -it mongo2 mongo admin
 
 start mongo oplog sync:
 ```
-$ go run main.go sync --src mongodb://localhost:27018 --src-username mongooplog --src-password some-password --dst mongodb://localhost:27019 --dst-username mongooplog --dst-password some-password
+$ go run main.go sync --src "mongodb://localhost:27018" --src-username mongooplog --src-password some-password --src-ssl=false --dst "mongodb://localhost:27019" --dst-username mongooplog --dst-password some-password --dst-ssl=false
 ```
 
-Try adding, deleting and modify some records in **mongo1** server and check if they persist in **mongo2** server
+Try adding, deleting and modify some records in **mongo1** server and check if they persist in **mongo2** server. You can also use the `status` command to check the record count in each cluster.
+```
+$ go run main.go status --src "mongodb://localhost:27018" --src-username mongooplog --src-password some-password --src-ssl=false --dst "mongodb://localhost:27019" --dst-username mongooplog --dst-password some-password --dst-ssl=false
++--------+--------+-------------+------+
+|   DB   | SOURCE | DESTINATION | DIFF |
++--------+--------+-------------+------+
+| checkr |      1 |           1 |    0 |
++--------+--------+-------------+------+
+```
+
