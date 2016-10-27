@@ -10,7 +10,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
+
+type LastRecord struct {
+	ID bson.ObjectId `bson:"_id"`
+}
 
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
@@ -63,15 +68,18 @@ var statusCmd = &cobra.Command{
 				fmt.Errorf("Error: %s", err)
 			}
 			for _, collname := range collnames {
-				srcColl := src.Session.DB(dbname).C(collname)
-				srcQuery := srcColl.Find(nil)
-				total, _ = srcQuery.Count()
-				srcTotal += total
-
 				dstColl := dst.Session.DB(dbname).C(collname)
-				dstQuery := dstColl.Find(nil)
+				var dstLastRecord LastRecord
+				_ = dstColl.Find(nil).Sort("-$natural").Limit(1).One(&dstLastRecord)
+
+				dstQuery := dstColl.Find(bson.M{"_id": bson.M{"$lt": dstLastRecord.ID}})
 				total, _ = dstQuery.Count()
 				dstTotal += total
+
+				srcColl := src.Session.DB(dbname).C(collname)
+				srcQuery := srcColl.Find(bson.M{"_id": bson.M{"$lt": dstLastRecord.ID}})
+				total, _ = srcQuery.Count()
+				srcTotal += total
 			}
 			row := []string{dbname, strconv.Itoa(srcTotal), strconv.Itoa(dstTotal), strconv.Itoa(srcTotal - dstTotal)}
 			data = append(data, row)
