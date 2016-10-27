@@ -69,10 +69,11 @@ func NewConnection(config Config) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	session.SetSocketTimeout(5 * time.Minute)
+	session.SetSocketTimeout(1 * time.Minute)
+	session.SetPrefetch(1.0)
 
 	c.Session = session
-	c.Session.SetMode(mgo.SecondaryPreferred, true)
+	//c.Session.SetMode(mgo.SecondaryPreferred, true)
 	c.Session.Login(&c.config.Creds)
 
 	return c, nil
@@ -130,12 +131,17 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 
 	oplog := c.Session.DB("local").C("oplog.rs")
 
+	var head_result struct {
+		Timestamp bson.MongoTimestamp `bson:"ts"`
+	}
+	err = oplog.Find(nil).Sort("-$natural").Limit(1).One(&head_result)
+
 	restore_query = bson.M{
 		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
 	}
 
 	tail_query = bson.M{
-		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
+		"ts": bson.M{"$gt": head_result.Timestamp},
 	}
 
 	if viper.GetInt("since") > 0 {
@@ -160,7 +166,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		iter = oplog.Find(restore_query).Iter()
 		for iter.Next(&oplogEntry) {
 			tail_query = bson.M{
-				"ts": oplogEntry.Timestamp,
+				"ts": bson.M{"$gt": oplogEntry.Timestamp},
 			}
 
 			// skip noops
@@ -193,7 +199,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 	}
 
 	fmt.Println("Tailin...")
-	iter = oplog.Find(tail_query).Tail(30 * time.Second)
+	iter = oplog.Find(tail_query).Tail(1 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
 			// skip noops
@@ -232,6 +238,6 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 			continue
 		}
 
-		iter = oplog.Find(tail_query).Tail(30 * time.Second)
+		iter = oplog.Find(tail_query).Tail(1 * time.Second)
 	}
 }
