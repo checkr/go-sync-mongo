@@ -69,6 +69,7 @@ func NewConnection(config Config) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
+	session.SetSocketTimeout(5 * time.Minute)
 
 	c.Session = session
 	c.Session.SetMode(mgo.SecondaryPreferred, true)
