@@ -119,29 +119,35 @@ func (c *Connection) Push(oplog bson.M) {
 
 func (c *Connection) SyncOplog(dst *Connection) error {
 	var (
-		query      bson.M
-		oplogEntry Oplog
-		iter       *mgo.Iter
-		sec        bson.MongoTimestamp
-		ord        bson.MongoTimestamp
-		err        error
+		restore_query bson.M
+		tail_query    bson.M
+		oplogEntry    Oplog
+		iter          *mgo.Iter
+		sec           bson.MongoTimestamp
+		ord           bson.MongoTimestamp
+		err           error
 	)
 
 	oplog := c.Session.DB("local").C("oplog.rs")
 
-	query = bson.M{
+	restore_query = bson.M{
+		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
+	}
+
+	tail_query = bson.M{
 		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
 	}
 
 	if viper.GetInt("since") > 0 {
 		sec = bson.MongoTimestamp(viper.GetInt("since"))
 		ord = bson.MongoTimestamp(viper.GetInt("ordinal"))
-		query["ts"] = bson.M{"$gt": sec<<32 + ord}
+		restore_query["ts"] = bson.M{"$gt": sec<<32 + ord}
 	}
 
 	dbnames, _ := c.databaseRegExs()
 	if len(dbnames) > 0 {
-		query["ns"] = bson.M{"$in": dbnames}
+		restore_query["ns"] = bson.M{"$in": dbnames}
+		tail_query["ns"] = bson.M{"$in": dbnames}
 	} else {
 		return fmt.Errorf("No databases found")
 	}
@@ -149,8 +155,45 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 	applyOpsResponse := ApplyOpsResponse{}
 	opCount := 0
 
+	if viper.GetInt("since") > 0 {
+		fmt.Println("Restoring oplog...")
+		iter = oplog.Find(restore_query).Iter()
+		for iter.Next(&oplogEntry) {
+			tail_query = bson.M{
+				"ts": oplogEntry.Timestamp,
+			}
+
+			// skip noops
+			if oplogEntry.Operation == "n" {
+				log.Printf("skipping no-op for namespace `%v`", oplogEntry.Namespace)
+				continue
+			}
+			opCount++
+
+			// apply the operation
+			opsToApply := []Oplog{oplogEntry}
+			err := dst.Session.Run(bson.M{"applyOps": opsToApply}, &applyOpsResponse)
+			if err != nil {
+				return fmt.Errorf("error applying ops: %v", err)
+			}
+
+			// check the server's response for an issue
+			if !applyOpsResponse.Ok {
+				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+			}
+
+			fmt.Println(opCount)
+		}
+
+		err = iter.Err()
+		if err != nil {
+			iter.Close()
+			return err
+		}
+	}
+
 	fmt.Println("Tailin...")
-	iter = oplog.Find(query).Tail(1 * time.Second)
+	iter = oplog.Find(tail_query).Tail(30 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
 			// skip noops
@@ -189,6 +232,6 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 			continue
 		}
 
-		iter = oplog.Find(query).Tail(1 * time.Second)
+		iter = oplog.Find(tail_query).Tail(30 * time.Second)
 	}
 }
