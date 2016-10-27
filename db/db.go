@@ -147,7 +147,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 	if viper.GetInt("since") > 0 {
 		sec = bson.MongoTimestamp(viper.GetInt("since"))
 		ord = bson.MongoTimestamp(viper.GetInt("ordinal"))
-		restore_query["ts"] = bson.M{"$gt": sec<<32 + ord}
+		restore_query["ts"] = bson.M{"$gt": bson.MongoTimestamp(sec<<32 + ord)}
 	}
 
 	dbnames, _ := c.databaseRegExs()
@@ -166,7 +166,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		iter = oplog.Find(restore_query).Iter()
 		for iter.Next(&oplogEntry) {
 			tail_query = bson.M{
-				"ts": bson.M{"$gt": oplogEntry.Timestamp},
+				"ts": bson.M{"$gte": oplogEntry.Timestamp},
 			}
 
 			// skip noops
@@ -198,7 +198,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		}
 	}
 
-	fmt.Println("Tailin...")
+	fmt.Println("Tailing...")
 	iter = oplog.Find(tail_query).Tail(1 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
