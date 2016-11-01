@@ -1,4 +1,4 @@
-# go-sync-mongo
+# Go-Sync-Mongo
 
 Simple tool that polls operations from the replication oplog of a remote server, and applies them to the local/remote server. This capability supports certain classes of real-time migrations that require that the source server remain online and in operation throughout the migration process.
 
@@ -69,3 +69,5 @@ $ go run main.go status --src "mongodb://localhost:27018" --src-username mongoop
 +--------+--------+-------------+------+
 ```
 
+### Releases
+You can download binary releases for linux, macos and windows [here](https://github.com/checkr/go-sync-mongo/releases)
