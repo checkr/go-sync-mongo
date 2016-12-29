@@ -60,11 +60,11 @@ func init() {
 	RootCmd.PersistentFlags().String("src", "", "mongodb://host1:27017")
 	RootCmd.PersistentFlags().String("src-username", "", "source database username")
 	RootCmd.PersistentFlags().String("src-password", "", "source database password")
-	RootCmd.PersistentFlags().Bool("src-ssl", true, "source ssl enabled (true)")
+	RootCmd.PersistentFlags().Bool("src-ssl", false, "source ssl enabled (true)")
 	RootCmd.PersistentFlags().String("dst", "", "mongodb://host1:27017,host2:27017")
 	RootCmd.PersistentFlags().String("dst-username", "", "destination database username")
 	RootCmd.PersistentFlags().String("dst-password", "", "destiantion database password")
-	RootCmd.PersistentFlags().Bool("dst-ssl", true, "destination ssl enabled (true)")
+	RootCmd.PersistentFlags().Bool("dst-ssl", false, "destination ssl enabled (true)")
 
 	viper.BindPFlag("src", RootCmd.PersistentFlags().Lookup("src"))
 	viper.BindPFlag("src-username", RootCmd.PersistentFlags().Lookup("src-username"))
