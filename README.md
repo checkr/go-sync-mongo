@@ -88,3 +88,9 @@ Build docker image:
 ```
 docker build --pull -t thinkpoet/go-sync-mongo:master .
 ```
+
+Or you can directly pull docker image from docker hub:
+```
+docker pull thinkpoet/go-sync-mongo:v1.1
+```
+And use it in your local environment.
