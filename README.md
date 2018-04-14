@@ -86,5 +86,5 @@ Cross compile binaries:
 
 Build docker image:
 ```
-docker build --pull -t hongshibao/go-sync-mongo:master .
+docker build --pull -t thinkpoet/go-sync-mongo:master .
 ```
