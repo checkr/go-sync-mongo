@@ -1,2 +1,3 @@
 .go-sync-mongo.yml
 /bin
+vendor
