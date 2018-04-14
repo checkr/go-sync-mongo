@@ -1,0 +1,10 @@
+package: github.com/checkr/go-sync-mongo
+import:
+- package: github.com/olekukonko/tablewriter
+- package: github.com/spf13/cobra
+  version: v0.0.2
+- package: github.com/spf13/viper
+  version: v1.0.2
+- package: gopkg.in/mgo.v2
+  subpackages:
+  - bson
