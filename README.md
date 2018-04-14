@@ -71,3 +71,20 @@ $ go run main.go status --src "mongodb://localhost:27018" --src-username mongoop
 
 ### Releases
 You can download binary releases for linux, macos and windows [here](https://github.com/checkr/go-sync-mongo/releases)
+
+### Build
+Install package dependencies:
+```
+glide install
+```
+Refer to this installation instructions (https://github.com/Masterminds/glide#install) if glide is not installed.
+
+Cross compile binaries:
+```
+./build.sh
+```
+
+Build docker image:
+```
+docker build --pull -t hongshibao/go-sync-mongo:master .
+```
