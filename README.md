@@ -94,3 +94,30 @@ Or you can directly pull docker image from docker hub:
 docker pull thinkpoet/go-sync-mongo:v1.1
 ```
 And use it in your local environment.
+
+### Statical Build and Tiny Docker Image
+Cross compile binaries by disabling cgo:
+```
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w' -o bin/go-sync-mongo-linux-amd64
+CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -a -ldflags '-w' -o bin/go-sync-mongo-darwin-amd64
+CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -a -ldflags '-w' -o bin/go-sync-mongo-windows-amd64.exe
+```
+
+```CGO_ENABLED=0``` is to disable cgo and make required libraries statically linked.
+
+```-a``` flag is to force rebuilding of all the packages that are used.
+
+```-ldflags '-w'``` flag is to remove DWARF (https://en.wikipedia.org/wiki/DWARF) debugging info.
+
+Build tiny docker image from ```scratch``` base image:
+```
+docker build --pull -t thinkpoet/go-sync-mongo:scratch_master --build-arg BASE_IMAGE=scratch .
+```
+
+The docker image size is about 8.4MB after build.
+
+Or you can directly pull docker image from docker hub:
+```
+docker pull thinkpoet/go-sync-mongo:scratch_v1.1
+```
+And use it in your local environment.
