@@ -107,7 +107,7 @@ CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -a -ldflags '-w' -o bin/go-sync
 
 ```-a``` flag is to force rebuilding of all the packages that are used.
 
-```-ldflags '-w'``` flag is to remove DWARF (https://en.wikipedia.org/wiki/DWARF) debugging info.
+```-ldflags '-w'``` flag is to remove DWARF debugging info and make the executable file size smaller.
 
 Build tiny docker image from ```scratch``` base image:
 ```
