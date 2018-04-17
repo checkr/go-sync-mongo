@@ -95,7 +95,7 @@ docker pull thinkpoet/go-sync-mongo:v1.1
 ```
 And use it in your local environment.
 
-### Statical Build and Tiny Docker Image
+### Static Build and Tiny Docker Image
 Cross compile binaries by disabling cgo:
 ```
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags '-w' -o bin/go-sync-mongo-linux-amd64
