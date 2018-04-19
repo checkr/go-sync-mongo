@@ -47,7 +47,8 @@ func NewConnection(config Config) (*Connection, error) {
 	var err error
 
 	if c.dialInfo, err = mgo.ParseURL(c.config.URI); err != nil {
-		panic(fmt.Sprintf("cannot parse given URI %s due to error: %s", c.config.URI, err.Error()))
+		return nil, fmt.Errorf("cannot parse given URI %s due to error: %s",
+			c.config.URI, err.Error())
 	}
 
 	if c.config.SSL {
