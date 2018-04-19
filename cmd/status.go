@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 
@@ -33,8 +33,7 @@ var statusCmd = &cobra.Command{
 		}
 		src, err := db.NewConnection(srcConfig)
 		if err != nil {
-			fmt.Printf("Error: new src connection - %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Error: new src connection - %s\n", err)
 		}
 
 		dstConfig := db.Config{
@@ -47,16 +46,14 @@ var statusCmd = &cobra.Command{
 		}
 		dst, err := db.NewConnection(dstConfig)
 		if err != nil {
-			fmt.Printf("Error: new dst connection - %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Error: new dst connection - %s\n", err)
 		}
 
 		data := [][]string{}
 
 		dbnames, err := src.Databases()
 		if err != nil {
-			fmt.Printf("Error: get src databases - %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Error: get src databases - %s\n", err)
 		}
 
 		for _, dbname := range dbnames {
@@ -68,8 +65,7 @@ var statusCmd = &cobra.Command{
 
 			collnames, err := src.Session.DB(dbname).CollectionNames()
 			if err != nil {
-				fmt.Printf("Error: get collections of %s - %s\n", dbname, err)
-				os.Exit(1)
+				log.Fatalf("Error: get collections of %s - %s\n", dbname, err)
 			}
 			for _, collname := range collnames {
 				dstColl := dst.Session.DB(dbname).C(collname)

@@ -163,7 +163,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 	opCount := 0
 
 	if viper.GetInt("since") > 0 {
-		fmt.Println("Restoring oplog...")
+		log.Println("Restoring oplog...")
 		iter = oplog.Find(restoreQuery).Iter()
 		for iter.Next(&oplogEntry) {
 			tailQuery = bson.M{
@@ -189,7 +189,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
 			}
 
-			fmt.Println(opCount)
+			log.Println(opCount)
 		}
 
 		err = iter.Err()
@@ -199,7 +199,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		}
 	}
 
-	fmt.Println("Tailing...")
+	log.Println("Tailing...")
 	iter = oplog.Find(tailQuery).Tail(1 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
@@ -222,7 +222,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
 			}
 
-			fmt.Println(opCount)
+			log.Println(opCount)
 		}
 
 		err = iter.Err()
