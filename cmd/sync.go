@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	db "github.com/checkr/go-sync-mongo/db"
 	"github.com/spf13/cobra"
@@ -24,7 +25,8 @@ var syncCmd = &cobra.Command{
 		}
 		src, err := db.NewConnection(srcConfig)
 		if err != nil {
-			fmt.Errorf("Error: %s", err)
+			fmt.Printf("Error: new src connection - %s\n", err)
+			os.Exit(1)
 		}
 
 		dstConfig := db.Config{
@@ -37,12 +39,14 @@ var syncCmd = &cobra.Command{
 		}
 		dst, err := db.NewConnection(dstConfig)
 		if err != nil {
-			fmt.Errorf("Error: %s", err)
+			fmt.Printf("Error: new dst connection - %s\n", err)
+			os.Exit(1)
 		}
 
 		err = src.SyncOplog(dst)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error: sync oplog - %s\n", err)
+			os.Exit(1)
 		}
 	},
 }
