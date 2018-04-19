@@ -121,40 +121,40 @@ func (c *Connection) Push(oplog bson.M) {
 
 func (c *Connection) SyncOplog(dst *Connection) error {
 	var (
-		restore_query bson.M
-		tail_query    bson.M
-		oplogEntry    Oplog
-		iter          *mgo.Iter
-		sec           bson.MongoTimestamp
-		ord           bson.MongoTimestamp
-		err           error
+		restoreQuery bson.M
+		tailQuery    bson.M
+		oplogEntry   Oplog
+		iter         *mgo.Iter
+		sec          bson.MongoTimestamp
+		ord          bson.MongoTimestamp
+		err          error
 	)
 
 	oplog := c.Session.DB("local").C("oplog.rs")
 
-	var head_result struct {
+	var headResult struct {
 		Timestamp bson.MongoTimestamp `bson:"ts"`
 	}
-	err = oplog.Find(nil).Sort("-$natural").Limit(1).One(&head_result)
+	err = oplog.Find(nil).Sort("-$natural").Limit(1).One(&headResult)
 
-	restore_query = bson.M{
+	restoreQuery = bson.M{
 		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
 	}
 
-	tail_query = bson.M{
-		"ts": bson.M{"$gt": head_result.Timestamp},
+	tailQuery = bson.M{
+		"ts": bson.M{"$gt": headResult.Timestamp},
 	}
 
 	if viper.GetInt("since") > 0 {
 		sec = bson.MongoTimestamp(viper.GetInt("since"))
 		ord = bson.MongoTimestamp(viper.GetInt("ordinal"))
-		restore_query["ts"] = bson.M{"$gt": bson.MongoTimestamp(sec<<32 + ord)}
+		restoreQuery["ts"] = bson.M{"$gt": bson.MongoTimestamp(sec<<32 + ord)}
 	}
 
 	dbnames, _ := c.databaseRegExs()
 	if len(dbnames) > 0 {
-		restore_query["ns"] = bson.M{"$in": dbnames}
-		tail_query["ns"] = bson.M{"$in": dbnames}
+		restoreQuery["ns"] = bson.M{"$in": dbnames}
+		tailQuery["ns"] = bson.M{"$in": dbnames}
 	} else {
 		return fmt.Errorf("No databases found")
 	}
@@ -164,9 +164,9 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 
 	if viper.GetInt("since") > 0 {
 		fmt.Println("Restoring oplog...")
-		iter = oplog.Find(restore_query).Iter()
+		iter = oplog.Find(restoreQuery).Iter()
 		for iter.Next(&oplogEntry) {
-			tail_query = bson.M{
+			tailQuery = bson.M{
 				"ts": bson.M{"$gte": oplogEntry.Timestamp},
 			}
 
@@ -200,7 +200,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 	}
 
 	fmt.Println("Tailing...")
-	iter = oplog.Find(tail_query).Tail(1 * time.Second)
+	iter = oplog.Find(tailQuery).Tail(1 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
 			// skip noops
@@ -239,6 +239,6 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 			continue
 		}
 
-		iter = oplog.Find(tail_query).Tail(1 * time.Second)
+		iter = oplog.Find(tailQuery).Tail(1 * time.Second)
 	}
 }
