@@ -136,6 +136,9 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		Timestamp bson.MongoTimestamp `bson:"ts"`
 	}
 	err = oplog.Find(nil).Sort("-$natural").Limit(1).One(&headResult)
+	if err != nil {
+		return fmt.Errorf("oplog find one failed: %v", err)
+	}
 
 	restoreQuery = bson.M{
 		"ts": bson.M{"$gt": bson.MongoTimestamp(time.Now().Unix()<<32 + time.Now().Unix())},
