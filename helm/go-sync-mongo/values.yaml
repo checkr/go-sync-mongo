@@ -15,6 +15,6 @@ commandline:
     dst: 127.0.0.1:27017
     dstUsername: admin
     dstPassword: admin
-    srcEnableSSL: true
-    dstEnableSSL: true
+    srcEnableSSL: false
+    dstEnableSSL: false
     since: 1
