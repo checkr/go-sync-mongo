@@ -3,7 +3,6 @@ image:
   repository: thinkpoet/go-sync-mongo
   tag: v1.1
   pullPolicy: Always
-namespace: recognition
 resources:
   requests:
     cpu: 100m

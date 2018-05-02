@@ -2,7 +2,6 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: {{ template "gosyncmongo.fullname" . }}
-  namespace: {{ .Values.namespace }}
   labels:
     app: {{ template "gosyncmongo.name" . }}
     chart: {{ template "gosyncmongo.chart" . }}
