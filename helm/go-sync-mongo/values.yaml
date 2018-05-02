@@ -11,11 +11,11 @@ resources:
 commandline:
   args:
     src: 127.0.0.1:27017
-    srcUsername: ""
-    srcPassword: ""
+    srcUsername: admin
+    srcPassword: admin
     dst: 127.0.0.1:27017
-    dstUsername: ""
-    dstPassword: ""
+    dstUsername: admin
+    dstPassword: admin
     srcEnableSSL: true
     dstEnableSSL: true
     since: 1
