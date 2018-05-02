@@ -1,0 +1,5 @@
+name: gosyncmongo
+version: 1.0.0
+sources:
+  - https://github.com/hongshibao/go-sync-mongo
+engine: gotpl

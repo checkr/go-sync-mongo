@@ -1,0 +1,65 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "gosyncmongo.fullname" . }}
+  labels:
+    app: {{ template "gosyncmongo.name" . }}
+    chart: {{ template "gosyncmongo.chart" . }}
+    release: {{ .Release.Name }}
+{{- with .Values.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ template "gosyncmongo.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "gosyncmongo.name" . }}
+        release: {{ .Release.Name }}
+{{- with .Values.podAnnotations }}
+      annotations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --src mongodb://{{ .Values.commandline.args.src }}
+            - --src-username {{ .Values.commandline.args.srcUsername }}
+            - --src-password {{ .Values.commandline.args.srcPassword }}
+            - --dst mongodb://{{ .Values.commandline.args.dst }}
+            - --dst-username {{ .Values.commandline.args.dstUsername }}
+            - --dst-password {{ .Values.commandline.args.dstPassword }}
+            - --since {{ .Values.commandline.args.since }}
+            {{- if .Values.commandline.args.srcEnableSSL }}
+            - --src-ssl=true
+            {{- else }}
+            - --src-ssl=false
+            {{- end -}}
+            {{- if .Values.commandline.args.dstEnableSSL }}
+            - --dst-ssl=true
+            {{- else }}
+            - --dst-ssl=false
+            {{- end -}}
+            - sync
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

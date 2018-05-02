@@ -1,0 +1,20 @@
+replicas: 1
+image:
+  repository: thinkpoet/go-sync-mongo
+  tag: v1.1
+  pullPolicy: Always
+resources:
+  requests:
+    cpu: 100m
+    memory: 200Mi
+commandline:
+  args:
+    src: 127.0.0.1:27017
+    srcUsername: ""
+    srcPassword: ""
+    dst: 127.0.0.1:27017
+    dstUsername: ""
+    dstPassword: ""
+    srcEnableSSL: true
+    dstEnableSSL: true
+    since: 1
