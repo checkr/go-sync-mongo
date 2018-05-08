@@ -1,5 +1,6 @@
-# go-sync-mongo Helm Chart
-* Deploy mongodb sync program
+# Go-Sync-Mongo Helm Chart
+* Deploy MongoDB sync program
+* Tested on Kubernetes 1.7
 ## Configuration
 
 | Parameter                  | Description                         | Default                                                 |
