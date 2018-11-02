@@ -189,7 +189,12 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 
 			// check the server's response for an issue
 			if !applyOpsResponse.Ok {
-				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+				if c.config.IgnoreApplyError {
+					log.Println("ignore server error response of applying ops: %v",
+						applyOpsResponse.ErrMsg)
+				} else {
+					return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+				}
 			}
 
 			log.Println(opCount)
@@ -222,7 +227,12 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 
 			// check the server's response for an issue
 			if !applyOpsResponse.Ok {
-				return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+				if c.config.IgnoreApplyError {
+					log.Println("ignore server error response of applying ops: %v",
+						applyOpsResponse.ErrMsg)
+				} else {
+					return fmt.Errorf("server gave error applying ops: %v", applyOpsResponse.ErrMsg)
+				}
 			}
 
 			log.Println(opCount)

@@ -15,8 +15,9 @@ var syncCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		srcConfig := db.Config{
-			URI: viper.GetString("src"),
-			SSL: viper.GetBool("src-ssl"),
+			URI:              viper.GetString("src"),
+			SSL:              viper.GetBool("src-ssl"),
+			IgnoreApplyError: viper.GetBool("ignore-apply-error"),
 			Creds: mgo.Credential{
 				Username: viper.GetString("src-username"),
 				Password: viper.GetString("src-password"),
@@ -51,6 +52,8 @@ func init() {
 	RootCmd.AddCommand(syncCmd)
 	syncCmd.Flags().Int32("since", 0, "seconds since the Unix epoch")
 	syncCmd.Flags().Int32("ordinal", 0, "incrementing ordinal for operations within a given second")
+	syncCmd.Flags().Bool("ignore-apply-error", false, "ingore error of applying oplog (true)")
 	viper.BindPFlag("since", syncCmd.Flags().Lookup("since"))
 	viper.BindPFlag("ordinal", syncCmd.Flags().Lookup("ordinal"))
+	viper.BindPFlag("ignore-apply-error", syncCmd.Flags().Lookup("ignore-apply-error"))
 }
