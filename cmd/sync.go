@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	s "strings"
 
-	db "github.com/checkr/go-sync-mongo/db"
+	db "../db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	mgo "gopkg.in/mgo.v2"
@@ -21,6 +22,8 @@ var syncCmd = &cobra.Command{
 				Username: viper.GetString("src-username"),
 				Password: viper.GetString("src-password"),
 			},
+			Database:    viper.GetString("src-db"),
+			Collections: s.Split(viper.GetString("src-collections"), ","),
 		}
 		src, err := db.NewConnection(srcConfig)
 		if err != nil {
@@ -34,6 +37,8 @@ var syncCmd = &cobra.Command{
 				Username: viper.GetString("dst-username"),
 				Password: viper.GetString("dst-password"),
 			},
+			Database:    viper.GetString("dst-db"),
+			Collections: make([]string, 0),
 		}
 		dst, err := db.NewConnection(dstConfig)
 		if err != nil {

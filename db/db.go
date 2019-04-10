@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	s "strings"
 	"sync"
 	"time"
 
@@ -88,7 +89,7 @@ func (c *Connection) Databases() ([]string, error) {
 	var slice []string
 
 	for _, dbname := range dbnames {
-		if dbname != "local" && dbname != "admin" {
+		if dbname == c.config.Database {
 			slice = append(slice, dbname)
 		}
 	}
@@ -104,7 +105,7 @@ func (c *Connection) databaseRegExs() ([]bson.RegEx, error) {
 	var slice []bson.RegEx
 
 	for _, dbname := range dbnames {
-		if dbname != "local" && dbname != "admin" {
+		if dbname == c.config.Database {
 			slice = append(slice, bson.RegEx{Pattern: dbname + ".*"})
 		}
 	}
@@ -179,6 +180,7 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 			// apply the operation
 			opsToApply := []Oplog{oplogEntry}
 			err := dst.Session.Run(bson.M{"applyOps": opsToApply}, &applyOpsResponse)
+
 			if err != nil {
 				return fmt.Errorf("error applying ops: %v", err)
 			}
@@ -198,7 +200,8 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 		}
 	}
 
-	fmt.Println("Tailing...")
+	fmt.Println("Tailing.....")
+
 	iter = oplog.Find(tail_query).Tail(1 * time.Second)
 	for {
 		for iter.Next(&oplogEntry) {
@@ -207,11 +210,46 @@ func (c *Connection) SyncOplog(dst *Connection) error {
 				log.Printf("skipping no-op for namespace `%v`", oplogEntry.Namespace)
 				continue
 			}
-			opCount++
+
+			if !s.Contains(oplogEntry.Namespace, c.config.Database+".") {
+				log.Printf("skipping namespace `%v`", oplogEntry.Namespace)
+				continue
+			}
+
+			// check collection against config
+			collection := s.Split(oplogEntry.Namespace, ".")[1]
+
+			isCollectionMatch := false
+			for _, permittedCollection := range c.config.Collections {
+				if collection == permittedCollection {
+					isCollectionMatch = true
+				}
+			}
+
+			if !isCollectionMatch {
+				log.Printf("skipping collection `%v`", oplogEntry.Namespace)
+				continue
+			}
+
+			oplogEntry.Namespace = dst.config.Database + "." + collection
+
+			if false {
+				fmt.Println("\n")
+				fmt.Println("****************************** %v", oplogEntry.HistoryID)
+				fmt.Println("****************************** %v", oplogEntry.Namespace)
+				fmt.Println("****************************** %v", oplogEntry.Object)
+				fmt.Println("****************************** %v", oplogEntry.Operation)
+				fmt.Println("****************************** %v", oplogEntry.Query)
+				fmt.Println("****************************** %v", oplogEntry.Timestamp)
+				fmt.Println("****************************** %v", oplogEntry.Version)
+				fmt.Println("%v", oplogEntry.Namespace)
+			}
 
 			// apply the operation
+			opCount++
 			opsToApply := []Oplog{oplogEntry}
 			err := dst.Session.Run(bson.M{"applyOps": opsToApply}, &applyOpsResponse)
+
 			if err != nil {
 				return fmt.Errorf("error applying ops: %v", err)
 			}
